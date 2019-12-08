@@ -1,0 +1,12 @@
+filename = './test/6/iris.data'
+file_separ = ','
+target = 4
+to_dummies = True
+missing_bool = True
+missing_value_handle = 'mean'
+duplicated_bool = False
+duplicated_row_handle = 'first'
+min_scaler_bool = True
+standardize_bool = True
+discretize = []
+test_size = 0.2
