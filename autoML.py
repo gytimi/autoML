@@ -1,5 +1,4 @@
 import config
-
 import pandas as pd
 import numpy as np
 from sklearn.pipeline import Pipeline
@@ -26,6 +25,9 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
 from sklearn import preprocessing
 from math import sqrt
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 def my_reader(filename, sheetname='Sheet1', separ=','):
@@ -284,6 +286,7 @@ def auto_ml():
     input_vars = to_pure_numbers(my_data)
 
     # Choosing if it is a regression or classification
+    global regression, classification
     regression, classification = guess_goal(my_data, config.target)
 
     # Modelling and building the pipeline
@@ -474,6 +477,4 @@ def auto_ml():
         corr_df.to_excel(writer, sheet_name="Correlation")
 
 
-classification = None
-regression = None
-
+auto_ml()
