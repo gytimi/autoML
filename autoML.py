@@ -27,10 +27,11 @@ from sklearn import preprocessing
 from math import sqrt
 import warnings
 
-# warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore")
 
 
 def my_reader(filename, sheetname='Sheet1', separ=','):
+    """Reads a file to a Dataframe."""
     global df_read
     filename_list = filename.split('.')
     extension = filename_list[-1]
@@ -64,12 +65,14 @@ def my_reader(filename, sheetname='Sheet1', separ=','):
 
 
 def my_train_test_split(act_my_data, act_test_size=0.5):
+    """Splits tha Dataframe to a train and test Dataframe."""
     act_train_df, act_test_df = train_test_split(act_my_data,
                                                  test_size=act_test_size)
     return act_train_df, act_test_df
 
 
 def to_dummies(to_dummy_data):
+    """Converts the Dataframe non numerical columns to dummy columns."""
     if config.to_dummies:
         for col in to_dummy_data.columns:
             unique_col_num = len(pd.unique(to_dummy_data[col]))
@@ -77,7 +80,8 @@ def to_dummies(to_dummy_data):
             col_type = to_dummy_data.dtypes[col]
             if (col_type == "object") \
                     & (unique_col_num < dummy_max) \
-                    & (unique_col_num > 1):
+                    & (unique_col_num > 1) \
+                    & (col != config.target):
                 temp_dummies = pd.get_dummies(to_dummy_data[col])
                 to_dummy_data = pd.concat([to_dummy_data, temp_dummies],
                                           axis=1, sort=False)
@@ -85,13 +89,16 @@ def to_dummies(to_dummy_data):
 
 
 def to_pure_numbers(mydata):
+    """Selects the numerical columns from the Dataframe."""
     num_type = (mydata.dtypes == "float64") | (mydata.dtypes == "int64")
     number_list = list((mydata.dtypes[num_type]).keys())
-    number_list.remove(config.target)
+    if config.target in number_list:
+        number_list.remove(config.target)
     return number_list
 
 
 def guess_goal(mydata, target):
+    """Choose the model's aim. (regression/classification)"""
     cardin = dict(mydata.apply(pd.Series.nunique))
     target_type = mydata.dtypes[target]
     if(target_type == 'float64') | (target_type == 'int64'):
@@ -108,6 +115,7 @@ def guess_goal(mydata, target):
 
 
 class MissingValueHandle(BaseEstimator):
+    """Handles missing values."""
     def __init__(self):
         pass
 
@@ -127,6 +135,7 @@ class MissingValueHandle(BaseEstimator):
 
 
 class DuplicatedRowHandle(BaseEstimator):
+    """Handles duplicated rows."""
     def __init__(self):
         pass
 
@@ -141,6 +150,7 @@ class DuplicatedRowHandle(BaseEstimator):
 
 
 class MyMinMaxScaler(BaseEstimator):
+    """Scales the data with MinMaxScaler."""
     def __init__(self):
         pass
 
@@ -158,6 +168,7 @@ class MyMinMaxScaler(BaseEstimator):
 
 
 class Standardize(BaseEstimator):
+    """Standardize the data."""
     def __init__(self):
         pass
 
@@ -175,6 +186,7 @@ class Standardize(BaseEstimator):
 
 
 class Digitize(BaseEstimator):
+    """Digitize the data."""
     def __init__(self):
         pass
 
@@ -193,7 +205,8 @@ class Digitize(BaseEstimator):
         return transform_data
 
 
-def my_evaluation_pipe(y_pred, y_true):
+def my_evaluation(y_pred, y_true):
+    """Evaulate two series."""
     act_list = []
     act_eval = []
     act_column = []
@@ -232,6 +245,7 @@ def my_evaluation_pipe(y_pred, y_true):
 
 
 def is_binary(incoming_data):
+    """Chosses binary columns."""
     binary_cols = []
     for col in incoming_data.columns:
         unique_col_num = len(pd.unique(incoming_data[col]))
@@ -241,6 +255,7 @@ def is_binary(incoming_data):
 
 
 def is_unary(incoming_data):
+    """Chosses unary columns."""
     unary_cols = []
     for col in incoming_data.columns:
         unique_col_num = len(pd.unique(incoming_data[col]))
@@ -250,6 +265,7 @@ def is_unary(incoming_data):
 
 
 def is_time(incoming_data):
+    """Chooses time columns."""
     time_cols = []
     for col in incoming_data.columns:
         try:
@@ -263,11 +279,15 @@ def is_time(incoming_data):
 
 
 def is_outlier(incoming_data):
-    outlier_df = incoming_data[incoming_data.apply(lambda x: np.abs(x - x.mean()) / x.std() > 3).all(axis=1)]
+    """Examines if there is an outlier in the data."""
+    outlier_df = \
+        incoming_data[incoming_data.apply(
+            lambda x: np.abs(x - x.mean()) / x.std() > 3).all(axis=1)]
     return not outlier_df.empty
 
 
 def auto_ml():
+    """Main function of package."""
     # Reading from file
     my_data = my_reader(config.filename, separ=config.file_separ)
 
@@ -282,7 +302,8 @@ def auto_ml():
     my_data = to_dummies(my_data)
 
     # Train-test split
-    train_df, test_df = my_train_test_split(my_data, act_test_size=config.test_size)
+    train_df, test_df = \
+        my_train_test_split(my_data, act_test_size=config.test_size)
 
     # Pure numbers will be the input variables
     input_vars = to_pure_numbers(my_data)
@@ -293,7 +314,7 @@ def auto_ml():
 
     # Modelling and building the pipeline
     n_neighbors = 15
-    X = train_df[input_vars]
+    x_df = train_df[input_vars]
     if regression:
         pipe_1 = Pipeline([('missing', MissingValueHandle()),
                            ('duplicated', DuplicatedRowHandle()),
@@ -368,7 +389,8 @@ def auto_ml():
                            ('discretize', Digitize()),
                            ('standardize', Standardize()),
                            ('minmaxscaler', MyMinMaxScaler()),
-                           ('model', neighbors.KNeighborsClassifier(n_neighbors))])
+                           ('model',
+                            neighbors.KNeighborsClassifier(n_neighbors))])
         pipe_3 = Pipeline([('missing', MissingValueHandle()),
                            ('duplicated', DuplicatedRowHandle()),
                            ('discretize', Digitize()),
@@ -421,12 +443,12 @@ def auto_ml():
 
     # Fit the pipelines
     for pipe in pipelines:
-        pipe.fit(train_df[input_vars], train_df[config.target])
+        pipe.fit(x_df, train_df[config.target])
 
     # Is there outlier
-    outlier_bool = is_outlier(X)
+    outlier_bool = is_outlier(x_df)
 
-    corr_df = X.corr()
+    corr_df = x_df.corr()
 
     # Open new file
     result_path = './test_eval/Result_params_' +\
@@ -451,7 +473,8 @@ def auto_ml():
         result_file.write("Standardize, ")
     if config.to_dummies:
         result_file.write("To dummies")
-    result_file.write('\n' + "Discretize columns: " + str(config.discretize) + '\n')
+    result_file.write('\n' + "Discretize columns: " +
+                      str(config.discretize) + '\n')
     result_file.write("Binary columns: " + str(is_binary_list) + '\n')
     result_file.write("Unary columns: " + str(is_unary_list) + '\n')
     result_file.write("Time columns: " + str(is_time_list) + '\n')
@@ -463,8 +486,8 @@ def auto_ml():
     result_cols = []
     for idx, val in enumerate(pipelines):
         result_df = pd.concat([result_df,
-                               my_evaluation_pipe(val.predict(test_df[input_vars]),
-                                                  test_df[config.target])])
+                               my_evaluation(val.predict(test_df[input_vars]),
+                                             test_df[config.target])])
         result_cols.append(pipe_dict[idx])
 
     result_df.index = result_cols
