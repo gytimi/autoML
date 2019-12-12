@@ -27,7 +27,7 @@ from sklearn import preprocessing
 from math import sqrt
 import warnings
 
-warnings.filterwarnings("ignore")
+# warnings.filterwarnings("ignore")
 
 
 def my_reader(filename, sheetname='Sheet1', separ=','):
@@ -86,7 +86,9 @@ def to_dummies(to_dummy_data):
 
 def to_pure_numbers(mydata):
     num_type = (mydata.dtypes == "float64") | (mydata.dtypes == "int64")
-    return list((mydata.dtypes[num_type]).keys())
+    number_list = list((mydata.dtypes[num_type]).keys())
+    number_list.remove(config.target)
+    return number_list
 
 
 def guess_goal(mydata, target):
@@ -437,6 +439,7 @@ def auto_ml():
     else:
         result_file.write("Prediction type: Classification" + '\n')
     result_file.write("Test size: " + str(config.test_size*100) + "%" + '\n')
+    result_file.write("Model input columns: " + str(input_vars) + '\n')
     result_file.write("Used preparations: " + '\n')
     if config.missing_bool:
         result_file.write("Missing value handle (" +
