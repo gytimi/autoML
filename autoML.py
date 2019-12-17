@@ -501,3 +501,6 @@ def auto_ml():
         else:
             result_df.to_excel(writer, sheet_name="Classification")
         corr_df.to_excel(writer, sheet_name="Correlation")
+
+
+auto_ml()
