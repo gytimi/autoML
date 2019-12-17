@@ -13,6 +13,7 @@ To use (with caution), simply do::
 * pandas (conda install pandas)
 * sklearn (conda install -c anaconda scikit-learn)
 * openpyxl (conda install openpyxl)
+* xlrd (conda install xlrd)
 
 ## Demo
 
